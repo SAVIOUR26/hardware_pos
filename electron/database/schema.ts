@@ -155,6 +155,10 @@ CREATE INDEX IF NOT EXISTS idx_customers_tally_id ON customers(tally_id);
 CREATE INDEX IF NOT EXISTS idx_customers_name ON customers(name);
 CREATE INDEX IF NOT EXISTS idx_customers_active ON customers(is_active);
 
+-- Insert default Walk-in Customer
+INSERT OR IGNORE INTO customers (id, name, phone, address, is_active)
+VALUES (1, 'Walk-in Customer', '', 'General Sales', 1);
+
 -- ============================================================================
 -- SUPPLIERS
 -- ============================================================================

@@ -223,7 +223,7 @@ async function importLedger(db: any, ledger: any, result: ImportResult) {
 
   if (isCustomer) {
     // Import as Customer
-    const existing = db.prepare('SELECT id FROM customers WHERE tally_id = ?').get(guid);
+    const existing = db.prepare('SELECT id FROM customers WHERE tally_id = ?').get(guid) as { id: number } | undefined;
 
     if (existing) {
       // Update existing
@@ -244,10 +244,11 @@ async function importLedger(db: any, ledger: any, result: ImportResult) {
       result.records_created++;
     }
 
+    result.records_processed++;
     result.summary.customers = (result.summary.customers || 0) + 1;
   } else if (isSupplier) {
     // Import as Supplier
-    const existing = db.prepare('SELECT id FROM suppliers WHERE tally_id = ?').get(guid);
+    const existing = db.prepare('SELECT id FROM suppliers WHERE tally_id = ?').get(guid) as { id: number } | undefined;
 
     if (existing) {
       // Update existing
@@ -268,6 +269,7 @@ async function importLedger(db: any, ledger: any, result: ImportResult) {
       result.records_created++;
     }
 
+    result.records_processed++;
     result.summary.suppliers = (result.summary.suppliers || 0) + 1;
   }
 }

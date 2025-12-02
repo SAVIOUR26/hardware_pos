@@ -16,7 +16,7 @@ interface CustomerData {
   phone?: string;
   email?: string;
   address?: string;
-  tax_id?: string;
+  tin?: string;
   credit_limit?: number;
   notes?: string;
 }
@@ -50,14 +50,14 @@ export function createCustomer(data: CustomerData): any {
 
     const result = execute(
       `INSERT INTO customers (
-        name, phone, email, address, tax_id, credit_limit, notes
+        name, phone, email, address, tin, credit_limit, notes
       ) VALUES (?, ?, ?, ?, ?, ?, ?)`,
       [
         data.name.trim(),
         data.phone?.trim() || null,
         data.email?.trim() || null,
         data.address?.trim() || null,
-        data.tax_id?.trim() || null,
+        data.tin?.trim() || null,
         data.credit_limit || 0,
         data.notes?.trim() || null,
       ]
@@ -242,9 +242,9 @@ export function updateCustomer(id: number, data: Partial<CustomerData>): any {
       fields.push('address = ?');
       values.push(data.address?.trim() || null);
     }
-    if (data.tax_id !== undefined) {
-      fields.push('tax_id = ?');
-      values.push(data.tax_id?.trim() || null);
+    if (data.tin !== undefined) {
+      fields.push('tin = ?');
+      values.push(data.tin?.trim() || null);
     }
     if (data.credit_limit !== undefined) {
       fields.push('credit_limit = ?');

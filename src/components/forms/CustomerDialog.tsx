@@ -16,7 +16,7 @@ function CustomerDialog({ customer, onClose, onSuccess }: CustomerDialogProps) {
     phone: '',
     email: '',
     address: '',
-    tax_id: '',
+    tin: '',
     credit_limit: '',
     notes: '',
   });
@@ -30,7 +30,7 @@ function CustomerDialog({ customer, onClose, onSuccess }: CustomerDialogProps) {
         phone: customer.phone || '',
         email: customer.email || '',
         address: customer.address || '',
-        tax_id: customer.tax_id || '',
+        tin: customer.tin || '',
         credit_limit: customer.credit_limit?.toString() || '',
         notes: customer.notes || '',
       });
@@ -54,7 +54,7 @@ function CustomerDialog({ customer, onClose, onSuccess }: CustomerDialogProps) {
         phone: formData.phone.trim() || undefined,
         email: formData.email.trim() || undefined,
         address: formData.address.trim() || undefined,
-        tax_id: formData.tax_id.trim() || undefined,
+        tin: formData.tin.trim() || undefined,
         credit_limit: parseFloat(formData.credit_limit) || 0,
         notes: formData.notes.trim() || undefined,
       };
@@ -182,8 +182,8 @@ function CustomerDialog({ customer, onClose, onSuccess }: CustomerDialogProps) {
                 <label className="block text-sm font-medium mb-2">Tax ID / TIN</label>
                 <input
                   type="text"
-                  value={formData.tax_id}
-                  onChange={(e) => updateField('tax_id', e.target.value)}
+                  value={formData.tin}
+                  onChange={(e) => updateField('tin', e.target.value)}
                   placeholder="Optional"
                   className="w-full px-3 py-2 border border-border rounded-lg focus:outline-none focus:ring-2 focus:ring-primary"
                 />

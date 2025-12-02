@@ -10,6 +10,7 @@ import {
   Database,
   Settings,
   PackageX,
+  RotateCcw,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
@@ -23,6 +24,7 @@ interface NavItem {
 const navItems: NavItem[] = [
   { to: '/dashboard', icon: LayoutDashboard, label: 'Dashboard' },
   { to: '/sales', icon: ShoppingCart, label: 'Sales' },
+  { to: '/sales/returns', icon: RotateCcw, label: 'Returns' },
   { to: '/sales/not-taken', icon: PackageX, label: 'Not Taken', badge: '⭐' },
   { to: '/purchases', icon: ShoppingBag, label: 'Purchase' },
   { to: '/inventory', icon: Package, label: 'Inventory' },

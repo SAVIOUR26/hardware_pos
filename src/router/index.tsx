@@ -8,6 +8,9 @@ import NewSale from '@/pages/sales/NewSale';
 import ViewSale from '@/pages/sales/ViewSale';
 import NotTakenReport from '@/pages/sales/NotTakenReport';
 import Quotations from '@/pages/sales/Quotations';
+import SalesReturnIndex from '@/pages/sales/SalesReturnIndex';
+import NewSalesReturn from '@/pages/sales/NewSalesReturn';
+import ViewSalesReturn from '@/pages/sales/ViewSalesReturn';
 
 // Purchase
 import PurchaseIndex from '@/pages/purchase/PurchaseIndex';
@@ -43,9 +46,14 @@ function AppRouter() {
           <Route path="sales">
             <Route index element={<SalesIndex />} />
             <Route path="new" element={<NewSale />} />
-            <Route path=":id" element={<ViewSale />} />
+            <Route path="view/:id" element={<ViewSale />} />
             <Route path="not-taken" element={<NotTakenReport />} />
             <Route path="quotations" element={<Quotations />} />
+            <Route path="returns">
+              <Route index element={<SalesReturnIndex />} />
+              <Route path="new" element={<NewSalesReturn />} />
+              <Route path="view/:id" element={<ViewSalesReturn />} />
+            </Route>
           </Route>
 
           {/* Purchase Routes */}

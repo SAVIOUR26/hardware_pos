@@ -10,6 +10,7 @@ import {
   Package,
   Printer,
   PackageX,
+  RotateCcw,
 } from 'lucide-react';
 import { toast } from 'sonner';
 
@@ -143,6 +144,14 @@ function ViewSale() {
               Mark as Taken
             </button>
           )}
+          <button
+            onClick={() => navigate(`/sales/returns/new?invoice_id=${invoice.id}`)}
+            className="px-4 py-2 border border-red-500 text-red-600 rounded-lg hover:bg-red-50 transition-colors flex items-center gap-2"
+            title="Process a return for this invoice"
+          >
+            <RotateCcw className="w-4 h-4" />
+            Process Return
+          </button>
           <button
             onClick={async () => {
               try {

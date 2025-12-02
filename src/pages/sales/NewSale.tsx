@@ -238,7 +238,7 @@ function NewSale() {
 
       if (result.success) {
         toast.success(
-          `${isQuotation ? 'Quotation' : 'Invoice'} ${result.data.invoice.invoice_number} created!`
+          `${isQuotation ? 'Quotation' : 'Invoice'} ${result.data.invoice_number} created!`
         );
 
         // Ask if user wants to print
@@ -252,7 +252,7 @@ function NewSale() {
 
         if (printChoice === '1') {
           // Print A4 Invoice
-          const printResult = await window.api.printer.printInvoice(result.data.invoice.id);
+          const printResult = await window.api.printer.printInvoice(result.data.id);
           if (printResult.success) {
             toast.success('Opening A4 invoice PDF...');
           } else {
@@ -260,7 +260,7 @@ function NewSale() {
           }
         } else if (printChoice === '2') {
           // Print Thermal Receipt
-          const printResult = await window.api.printer.printThermalReceipt(result.data.invoice.id);
+          const printResult = await window.api.printer.printThermalReceipt(result.data.id);
           if (printResult.success) {
             toast.success('Opening thermal receipt PDF...');
           } else {

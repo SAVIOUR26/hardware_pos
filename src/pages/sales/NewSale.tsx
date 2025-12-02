@@ -237,45 +237,23 @@ function NewSale() {
       const result = await window.api.sales.create(invoiceData);
 
       if (result.success) {
+        // Show success message
         toast.success(
-          `${isQuotation ? 'Quotation' : 'Invoice'} ${result.data.invoice_number} created!`
+          `✅ ${isQuotation ? 'Quotation' : 'Invoice'} ${result.data.invoice_number} created successfully!\n\n` +
+          `📋 Go to Sales Dashboard to view and print your ${isQuotation ? 'quotation' : 'invoice'}.`,
+          { duration: 5000 }
         );
 
-        // Ask if user wants to print
-        const printChoice = prompt(
-          'Invoice created successfully! Choose print format:\n' +
-          '1 - A4 Invoice (Standard)\n' +
-          '2 - Thermal Receipt (3-inch printer)\n' +
-          '0 - Skip printing\n\n' +
-          'Enter your choice (0-2):'
-        );
-
-        if (printChoice === '1') {
-          // Print A4 Invoice
-          const printResult = await window.api.printer.printInvoice(result.data.id);
-          if (printResult.success) {
-            toast.success('Opening A4 invoice PDF...');
-          } else {
-            toast.error('Failed to generate PDF: ' + (printResult.error?.message || 'Unknown error'));
-          }
-        } else if (printChoice === '2') {
-          // Print Thermal Receipt
-          const printResult = await window.api.printer.printThermalReceipt(result.data.id);
-          if (printResult.success) {
-            toast.success('Opening thermal receipt PDF...');
-          } else {
-            toast.error('Failed to generate thermal receipt: ' + (printResult.error?.message || 'Unknown error'));
-          }
-        }
-
-        // Navigate to invoice view or sales list
-        navigate('/sales');
+        // Navigate to sales list after a short delay
+        setTimeout(() => {
+          navigate('/sales');
+        }, 1500);
       } else {
         toast.error(result.error?.message || 'Failed to create invoice');
       }
     } catch (error: any) {
       console.error('Error creating invoice:', error);
-      toast.error('Failed to create invoice');
+      toast.error('Failed to create invoice: ' + error.message);
     } finally {
       setSaving(false);
     }

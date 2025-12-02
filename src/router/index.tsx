@@ -46,13 +46,13 @@ function AppRouter() {
           <Route path="sales">
             <Route index element={<SalesIndex />} />
             <Route path="new" element={<NewSale />} />
-            <Route path="view/:id" element={<ViewSale />} />
+            <Route path=":id" element={<ViewSale />} />
             <Route path="not-taken" element={<NotTakenReport />} />
             <Route path="quotations" element={<Quotations />} />
             <Route path="returns">
               <Route index element={<SalesReturnIndex />} />
               <Route path="new" element={<NewSalesReturn />} />
-              <Route path="view/:id" element={<ViewSalesReturn />} />
+              <Route path=":id" element={<ViewSalesReturn />} />
             </Route>
           </Route>
 

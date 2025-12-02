@@ -142,6 +142,10 @@ CREATE TABLE IF NOT EXISTS customers (
   -- Credit limits
   credit_limit_ugx REAL DEFAULT 0,
   credit_limit_usd REAL DEFAULT 0,
+  credit_limit REAL DEFAULT 0, -- General credit limit (backwards compatibility)
+
+  -- Additional fields
+  notes TEXT,
 
   -- Status
   is_active INTEGER DEFAULT 1,

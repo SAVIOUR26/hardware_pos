@@ -62,10 +62,48 @@ function initializeSchema(database: Database.Database): void {
     // Using embedded schema SQL from schema.ts
     database.exec(SCHEMA_SQL);
 
+    // Run migrations for existing databases
+    runMigrations(database);
+
     console.log('Schema initialized successfully (embedded schema)');
   } catch (error) {
     console.error('Failed to initialize schema:', error);
     throw error;
+  }
+}
+
+/**
+ * Run database migrations
+ * Add columns that may not exist in older database versions
+ */
+function runMigrations(database: Database.Database): void {
+  try {
+    console.log('Running database migrations...');
+
+    // Migration: Add credit_limit column to customers table
+    try {
+      database.exec('ALTER TABLE customers ADD COLUMN credit_limit REAL DEFAULT 0');
+      console.log('✓ Added credit_limit column to customers');
+    } catch (e: any) {
+      if (!e.message.includes('duplicate column name')) {
+        console.error('Migration error (credit_limit):', e.message);
+      }
+    }
+
+    // Migration: Add notes column to customers table
+    try {
+      database.exec('ALTER TABLE customers ADD COLUMN notes TEXT');
+      console.log('✓ Added notes column to customers');
+    } catch (e: any) {
+      if (!e.message.includes('duplicate column name')) {
+        console.error('Migration error (notes):', e.message);
+      }
+    }
+
+    console.log('Database migrations completed');
+  } catch (error) {
+    console.error('Migration error:', error);
+    // Don't throw - migrations are non-critical
   }
 }
 

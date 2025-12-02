@@ -45,13 +45,13 @@ function getCompanyInfo(): CompanyInfo {
   try {
     const company = queryOne<CompanyInfo>(
       `SELECT name, address, phone, email, tin, logo_path
-       FROM company_settings
+       FROM companies
        WHERE id = 1`
     );
     return company || {
-      name: 'Hardware Manager Pro',
-      address: null,
-      phone: null,
+      name: 'Stuti Hardware SMC Limited',
+      address: 'Go Down Rd, Arua, Uganda',
+      phone: '+256 777 058557',
       email: null,
       tin: null,
       logo_path: null,
@@ -59,9 +59,9 @@ function getCompanyInfo(): CompanyInfo {
   } catch (error) {
     console.error('Failed to get company info:', error);
     return {
-      name: 'Hardware Manager Pro',
-      address: null,
-      phone: null,
+      name: 'Stuti Hardware SMC Limited',
+      address: 'Go Down Rd, Arua, Uganda',
+      phone: '+256 777 058557',
       email: null,
       tin: null,
       logo_path: null,

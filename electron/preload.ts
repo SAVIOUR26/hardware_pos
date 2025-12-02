@@ -24,6 +24,14 @@ contextBridge.exposeInMainWorld('api', {
     getNotTakenReport: (filters?: any) => ipcRenderer.invoke('sales:getNotTakenReport', filters),
   },
 
+  // Sales Return API
+  salesReturn: {
+    create: (data: any) => ipcRenderer.invoke('salesreturn:create', data),
+    get: (id: number) => ipcRenderer.invoke('salesreturn:get', id),
+    list: (filters?: any) => ipcRenderer.invoke('salesreturn:list', filters),
+    updateRefund: (params: any) => ipcRenderer.invoke('salesreturn:updateRefund', params),
+  },
+
   // Purchase API (to be implemented)
   purchase: {
     create: (data: any) => ipcRenderer.invoke('purchase:create', data),

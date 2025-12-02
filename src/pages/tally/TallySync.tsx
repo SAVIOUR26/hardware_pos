@@ -1,185 +1,348 @@
-import { useState } from 'react';
-import { Database, Download, Upload, RefreshCw, CheckCircle, XCircle, AlertCircle } from 'lucide-react';
+import { useState, useEffect } from 'react';
+import {
+  Database,
+  Download,
+  Upload,
+  RefreshCw,
+  CheckCircle,
+  XCircle,
+  AlertCircle,
+  FileText,
+  Clock,
+  TrendingUp,
+  TrendingDown,
+} from 'lucide-react';
 import { toast } from 'sonner';
+import { format } from 'date-fns';
+
+interface SyncHistoryItem {
+  id: number;
+  sync_type: string;
+  sync_date: string;
+  file_path: string;
+  status: string;
+  records_processed: number;
+  records_created: number;
+  records_updated: number;
+  errors_count: number;
+  error_log: string[];
+  summary: any;
+}
 
 export default function TallySync() {
   const [syncing, setSyncing] = useState(false);
-  const [lastSyncDate, setLastSyncDate] = useState<Date | null>(null);
+  const [syncHistory, setSyncHistory] = useState<SyncHistoryItem[]>([]);
+  const [selectedHistory, setSelectedHistory] = useState<SyncHistoryItem | null>(null);
 
-  const handleExportToTally = async () => {
+  // Load sync history on mount
+  useEffect(() => {
+    loadSyncHistory();
+  }, []);
+
+  const loadSyncHistory = async () => {
+    try {
+      const result = await window.api.tally.getSyncHistory();
+      if (result.success) {
+        setSyncHistory(result.data);
+      }
+    } catch (error) {
+      console.error('Failed to load sync history:', error);
+    }
+  };
+
+  const handleImportMasters = async () => {
     setSyncing(true);
     try {
-      toast.loading('Exporting data to Tally...', { id: 'export-tally' });
-      // Simulate export process
-      await new Promise(resolve => setTimeout(resolve, 2000));
-      toast.success('Data exported to Tally successfully!', { id: 'export-tally' });
-      setLastSyncDate(new Date());
-    } catch (error) {
-      toast.error('Failed to export to Tally', { id: 'export-tally' });
+      toast.loading('Selecting Tally XML file...', { id: 'import-tally' });
+
+      const result = await window.api.tally.importMasters(null, {
+        importCurrencies: true,
+        importUnits: true,
+        importLedgers: true,
+        importProducts: true,
+      });
+
+      if (result.success) {
+        const data = result.data;
+
+        if (data.status === 'Success') {
+          toast.success(
+            `✅ Import Successful!\n
+            Created: ${data.records_created} | Updated: ${data.records_updated}\n
+            Customers: ${data.summary.customers || 0} | Suppliers: ${data.summary.suppliers || 0} | Products: ${data.summary.products || 0}`,
+            { id: 'import-tally', duration: 5000 }
+          );
+        } else if (data.status === 'Partial') {
+          toast.warning(
+            `⚠️ Import Completed with Errors\n
+            Created: ${data.records_created} | Errors: ${data.errors_count}`,
+            { id: 'import-tally', duration: 5000 }
+          );
+        } else {
+          toast.error(`❌ Import Failed: ${data.errors[0] || 'Unknown error'}`, {
+            id: 'import-tally',
+          });
+        }
+
+        // Reload history
+        await loadSyncHistory();
+      } else {
+        toast.error(result.error?.message || 'Import failed', { id: 'import-tally' });
+      }
+    } catch (error: any) {
+      toast.error('Import failed: ' + error.message, { id: 'import-tally' });
     } finally {
       setSyncing(false);
     }
   };
 
-  const handleImportFromTally = async () => {
+  const handleExportVouchers = async () => {
     setSyncing(true);
     try {
-      toast.loading('Importing data from Tally...', { id: 'import-tally' });
-      // Simulate import process
-      await new Promise(resolve => setTimeout(resolve, 2000));
-      toast.success('Data imported from Tally successfully!', { id: 'import-tally' });
-      setLastSyncDate(new Date());
-    } catch (error) {
-      toast.error('Failed to import from Tally', { id: 'import-tally' });
+      toast.loading('Exporting vouchers to Tally XML...', { id: 'export-tally' });
+
+      // Get current month date range
+      const now = new Date();
+      const firstDay = new Date(now.getFullYear(), now.getMonth(), 1);
+      const lastDay = new Date(now.getFullYear(), now.getMonth() + 1, 0);
+
+      const result = await window.api.tally.exportVouchers(
+        {
+          from: format(firstDay, 'yyyy-MM-dd'),
+          to: format(lastDay, 'yyyy-MM-dd'),
+        },
+        {
+          exportSales: true,
+          exportPurchases: true,
+        }
+      );
+
+      if (result.success && result.data.success) {
+        toast.success(`✅ Vouchers exported successfully!\nFile: ${result.data.filePath}`, {
+          id: 'export-tally',
+          duration: 5000,
+        });
+
+        // Reload history
+        await loadSyncHistory();
+      } else {
+        toast.error(result.data?.error || 'Export failed', { id: 'export-tally' });
+      }
+    } catch (error: any) {
+      toast.error('Export failed: ' + error.message, { id: 'export-tally' });
     } finally {
       setSyncing(false);
     }
   };
 
-  const handleSyncBoth = async () => {
-    setSyncing(true);
-    try {
-      toast.loading('Synchronizing with Tally...', { id: 'sync-tally' });
-      // Simulate sync process
-      await new Promise(resolve => setTimeout(resolve, 3000));
-      toast.success('Synchronization completed successfully!', { id: 'sync-tally' });
-      setLastSyncDate(new Date());
-    } catch (error) {
-      toast.error('Synchronization failed', { id: 'sync-tally' });
-    } finally {
-      setSyncing(false);
+  const getStatusIcon = (status: string) => {
+    switch (status) {
+      case 'Success':
+        return <CheckCircle className="w-5 h-5 text-green-600" />;
+      case 'Partial':
+        return <AlertCircle className="w-5 h-5 text-amber-600" />;
+      case 'Failed':
+        return <XCircle className="w-5 h-5 text-red-600" />;
+      default:
+        return <Clock className="w-5 h-5 text-gray-600" />;
+    }
+  };
+
+  const getStatusColor = (status: string) => {
+    switch (status) {
+      case 'Success':
+        return 'text-green-600 bg-green-50';
+      case 'Partial':
+        return 'text-amber-600 bg-amber-50';
+      case 'Failed':
+        return 'text-red-600 bg-red-50';
+      default:
+        return 'text-gray-600 bg-gray-50';
     }
   };
 
   return (
-    <div className="p-6 space-y-6 max-w-5xl mx-auto">
+    <div className="p-6 space-y-6 max-w-7xl mx-auto">
       {/* Header */}
       <div>
         <h1 className="text-3xl font-bold flex items-center gap-3">
           <Database className="w-8 h-8 text-primary" />
-          Tally Sync
+          Tally Prime Integration
         </h1>
         <p className="text-muted-foreground mt-1">
-          Synchronize data between Hardware Manager Pro and Tally ERP
+          Import masters from Tally and export vouchers for seamless accounting integration
         </p>
       </div>
 
-      {/* Sync Status Card */}
-      <div className="bg-card border border-border rounded-lg p-6">
-        <h2 className="text-lg font-semibold mb-4">Sync Status</h2>
-        <div className="space-y-3">
-          <div className="flex items-center justify-between p-3 bg-muted/30 rounded-lg">
-            <div className="flex items-center gap-3">
-              <CheckCircle className="w-5 h-5 text-green-600" />
-              <span className="font-medium">Connection Status</span>
+      {/* Quick Actions */}
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+        {/* Import Masters Card */}
+        <div className="bg-card border border-border rounded-lg p-6">
+          <div className="flex items-start gap-4">
+            <div className="p-3 bg-blue-100 rounded-lg">
+              <Download className="w-6 h-6 text-blue-600" />
             </div>
-            <span className="text-sm text-green-600 font-medium">Connected</span>
+            <div className="flex-1">
+              <h3 className="text-lg font-semibold mb-2">Import Masters from Tally</h3>
+              <p className="text-sm text-muted-foreground mb-4">
+                Import customers, suppliers, and products from Tally XML export file
+              </p>
+              <button
+                onClick={handleImportMasters}
+                disabled={syncing}
+                className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors disabled:opacity-50 flex items-center gap-2"
+              >
+                <Download className="w-4 h-4" />
+                Select XML File & Import
+              </button>
+            </div>
           </div>
-          <div className="flex items-center justify-between p-3 bg-muted/30 rounded-lg">
-            <div className="flex items-center gap-3">
-              <RefreshCw className="w-5 h-5 text-blue-600" />
-              <span className="font-medium">Last Sync</span>
+        </div>
+
+        {/* Export Vouchers Card */}
+        <div className="bg-card border border-border rounded-lg p-6">
+          <div className="flex items-start gap-4">
+            <div className="p-3 bg-green-100 rounded-lg">
+              <Upload className="w-6 h-6 text-green-600" />
             </div>
-            <span className="text-sm text-muted-foreground">
-              {lastSyncDate ? lastSyncDate.toLocaleString() : 'Never'}
-            </span>
+            <div className="flex-1">
+              <h3 className="text-lg font-semibold mb-2">Export Vouchers to Tally</h3>
+              <p className="text-sm text-muted-foreground mb-4">
+                Export sales and purchase invoices as Tally-compatible XML vouchers
+              </p>
+              <button
+                onClick={handleExportVouchers}
+                disabled={syncing}
+                className="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors disabled:opacity-50 flex items-center gap-2"
+              >
+                <Upload className="w-4 h-4" />
+                Export This Month
+              </button>
+            </div>
           </div>
         </div>
       </div>
 
-      {/* Sync Actions */}
-      <div className="bg-card border border-border rounded-lg p-6">
-        <h2 className="text-lg font-semibold mb-4">Synchronization Actions</h2>
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-          <button
-            onClick={handleExportToTally}
-            disabled={syncing}
-            className="flex flex-col items-center gap-3 p-6 bg-gradient-to-br from-blue-500 to-blue-600 text-white rounded-lg hover:opacity-90 transition-opacity disabled:opacity-50"
-          >
-            <Upload className="w-8 h-8" />
-            <div className="text-center">
-              <p className="font-semibold">Export to Tally</p>
-              <p className="text-xs opacity-90 mt-1">Send data to Tally ERP</p>
-            </div>
-          </button>
-
-          <button
-            onClick={handleImportFromTally}
-            disabled={syncing}
-            className="flex flex-col items-center gap-3 p-6 bg-gradient-to-br from-green-500 to-green-600 text-white rounded-lg hover:opacity-90 transition-opacity disabled:opacity-50"
-          >
-            <Download className="w-8 h-8" />
-            <div className="text-center">
-              <p className="font-semibold">Import from Tally</p>
-              <p className="text-xs opacity-90 mt-1">Fetch data from Tally ERP</p>
-            </div>
-          </button>
-
-          <button
-            onClick={handleSyncBoth}
-            disabled={syncing}
-            className="flex flex-col items-center gap-3 p-6 bg-gradient-to-br from-purple-500 to-purple-600 text-white rounded-lg hover:opacity-90 transition-opacity disabled:opacity-50"
-          >
-            <RefreshCw className={`w-8 h-8 ${syncing ? 'animate-spin' : ''}`} />
-            <div className="text-center">
-              <p className="font-semibold">Two-Way Sync</p>
-              <p className="text-xs opacity-90 mt-1">Sync both ways</p>
-            </div>
-          </button>
-        </div>
-      </div>
-
-      {/* Sync Configuration */}
-      <div className="bg-card border border-border rounded-lg p-6">
-        <h2 className="text-lg font-semibold mb-4">Configuration</h2>
-        <div className="space-y-4">
+      {/* Integration Guide */}
+      <div className="bg-blue-50 border border-blue-200 rounded-lg p-6">
+        <h3 className="text-lg font-semibold mb-3 flex items-center gap-2">
+          <FileText className="w-5 h-5 text-blue-600" />
+          How to Use Tally Integration
+        </h3>
+        <div className="space-y-3 text-sm">
           <div>
-            <label className="block text-sm font-medium mb-2">Tally Server URL</label>
-            <input
-              type="text"
-              placeholder="http://localhost:9000"
-              className="w-full px-3 py-2 border border-input bg-background rounded-lg focus:outline-none focus:ring-2 focus:ring-ring"
-              defaultValue="http://localhost:9000"
-            />
+            <strong className="text-blue-900">📥 Importing from Tally:</strong>
+            <ol className="list-decimal list-inside ml-4 mt-1 space-y-1 text-gray-700">
+              <li>In Tally Prime, go to Gateway of Tally → Display → Reports → All Masters</li>
+              <li>Press Alt+E to export, select XML format, and save the file</li>
+              <li>Click "Select XML File & Import" above and choose your exported file</li>
+              <li>Masters will be imported with Tally IDs for future sync</li>
+            </ol>
           </div>
+
           <div>
-            <label className="block text-sm font-medium mb-2">Company Name</label>
-            <input
-              type="text"
-              placeholder="Enter Tally company name"
-              className="w-full px-3 py-2 border border-input bg-background rounded-lg focus:outline-none focus:ring-2 focus:ring-ring"
-              defaultValue="Stuti Hardware SMC Limited"
-            />
+            <strong className="text-blue-900">📤 Exporting to Tally:</strong>
+            <ol className="list-decimal list-inside ml-4 mt-1 space-y-1 text-gray-700">
+              <li>Click "Export This Month" to generate Tally-compatible XML</li>
+              <li>Save the XML file to your desired location</li>
+              <li>In Tally Prime, go to Gateway of Tally → Import → Vouchers</li>
+              <li>Select the XML file and import your transactions</li>
+            </ol>
           </div>
-          <div className="flex items-center gap-2">
-            <input
-              type="checkbox"
-              id="auto-sync"
-              className="w-4 h-4 rounded border-input"
-              defaultChecked
-            />
-            <label htmlFor="auto-sync" className="text-sm">
-              Enable automatic synchronization every hour
-            </label>
-          </div>
-        </div>
-        <div className="mt-4">
-          <button className="px-4 py-2 bg-primary text-primary-foreground rounded-lg hover:opacity-90 transition-opacity">
-            Save Configuration
-          </button>
         </div>
       </div>
 
-      {/* Info Banner */}
-      <div className="bg-amber-50 border border-amber-200 rounded-lg p-4 flex items-start gap-3">
-        <AlertCircle className="w-5 h-5 text-amber-600 flex-shrink-0 mt-0.5" />
-        <div className="text-sm text-amber-800">
-          <p className="font-semibold mb-1">Coming Soon - Full Integration</p>
-          <p>
-            Tally synchronization functionality is currently under development.
-            The full integration will support real-time data sync between Hardware Manager Pro and Tally ERP 9.
-          </p>
+      {/* Sync History */}
+      <div className="bg-card border border-border rounded-lg p-6">
+        <div className="flex items-center justify-between mb-4">
+          <h2 className="text-xl font-semibold">Sync History</h2>
+          <button
+            onClick={loadSyncHistory}
+            className="text-sm text-muted-foreground hover:text-foreground flex items-center gap-1"
+          >
+            <RefreshCw className="w-4 h-4" />
+            Refresh
+          </button>
         </div>
+
+        {syncHistory.length === 0 ? (
+          <div className="text-center py-8 text-muted-foreground">
+            <Database className="w-12 h-12 mx-auto mb-3 opacity-20" />
+            <p>No sync history yet. Start by importing or exporting data.</p>
+          </div>
+        ) : (
+          <div className="space-y-3">
+            {syncHistory.map((item) => (
+              <div
+                key={item.id}
+                className="border border-border rounded-lg p-4 hover:bg-muted/30 cursor-pointer transition-colors"
+                onClick={() => setSelectedHistory(item)}
+              >
+                <div className="flex items-start justify-between">
+                  <div className="flex items-start gap-3 flex-1">
+                    {getStatusIcon(item.status)}
+                    <div className="flex-1">
+                      <div className="flex items-center gap-2 mb-1">
+                        <span className="font-medium">{item.sync_type}</span>
+                        <span
+                          className={`text-xs px-2 py-0.5 rounded-full ${getStatusColor(item.status)}`}
+                        >
+                          {item.status}
+                        </span>
+                      </div>
+                      <p className="text-sm text-muted-foreground">
+                        {format(new Date(item.sync_date), 'PPpp')}
+                      </p>
+                      <div className="flex items-center gap-4 mt-2 text-xs text-muted-foreground">
+                        <span className="flex items-center gap-1">
+                          <TrendingUp className="w-3 h-3" />
+                          {item.records_created} created
+                        </span>
+                        <span className="flex items-center gap-1">
+                          <TrendingDown className="w-3 h-3" />
+                          {item.records_updated} updated
+                        </span>
+                        {item.errors_count > 0 && (
+                          <span className="text-red-600 flex items-center gap-1">
+                            <XCircle className="w-3 h-3" />
+                            {item.errors_count} errors
+                          </span>
+                        )}
+                      </div>
+
+                      {/* Summary */}
+                      {item.summary && Object.keys(item.summary).length > 0 && (
+                        <div className="mt-2 text-xs text-muted-foreground">
+                          <strong>Imported:</strong>{' '}
+                          {Object.entries(item.summary)
+                            .map(([key, value]) => `${value} ${key}`)
+                            .join(', ')}
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                </div>
+
+                {/* Expanded Details */}
+                {selectedHistory?.id === item.id && item.errors_count > 0 && (
+                  <div className="mt-4 p-3 bg-red-50 border border-red-200 rounded">
+                    <h4 className="text-sm font-semibold text-red-900 mb-2">Errors:</h4>
+                    <ul className="text-xs text-red-700 space-y-1 max-h-40 overflow-y-auto">
+                      {item.error_log.slice(0, 10).map((error, idx) => (
+                        <li key={idx}>• {error}</li>
+                      ))}
+                      {item.error_log.length > 10 && (
+                        <li className="text-red-600 font-medium">
+                          ... and {item.error_log.length - 10} more errors
+                        </li>
+                      )}
+                    </ul>
+                  </div>
+                )}
+              </div>
+            ))}
+          </div>
+        )}
       </div>
     </div>
   );

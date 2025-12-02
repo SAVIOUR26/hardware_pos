@@ -4,6 +4,7 @@
  */
 
 import { registerSalesHandlers } from './sales.handlers';
+import { registerSalesReturnHandlers } from './salesreturn.handlers';
 import { registerDeliveryHandlers } from './delivery.handlers';
 import { registerInventoryHandlers } from './inventory.handlers';
 import { registerPurchaseHandlers } from './purchase.handlers';
@@ -13,6 +14,7 @@ import { registerDashboardHandlers } from './dashboard.handlers';
 import { registerPrinterHandlers } from './printer.handlers';
 import { registerReportsHandlers } from './reports.handlers';
 import { registerSettingsHandlers } from './settings.handlers';
+import { registerTallyHandlers } from './tally.handlers';
 
 /**
  * Register all IPC handlers
@@ -22,6 +24,7 @@ export function registerAllHandlers() {
   console.log('Registering all IPC handlers...');
 
   registerSalesHandlers();
+  registerSalesReturnHandlers();
   registerDeliveryHandlers();
   registerInventoryHandlers();
   registerPurchaseHandlers();
@@ -31,10 +34,10 @@ export function registerAllHandlers() {
   registerPrinterHandlers();
   registerReportsHandlers();
   registerSettingsHandlers();
+  registerTallyHandlers();
 
   // Additional handlers will be registered here:
   // registerPaymentHandlers();
-  // registerTallyHandlers();
 
   console.log('All IPC handlers registered successfully');
 }

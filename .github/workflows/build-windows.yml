@@ -1,0 +1,125 @@
+name: Build Windows Application
+
+on:
+  push:
+    branches:
+      - main
+      - claude/**
+    tags:
+      - 'v*'
+  pull_request:
+    branches:
+      - main
+  workflow_dispatch:
+
+jobs:
+  build-windows:
+    runs-on: windows-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '18'
+          cache: 'npm'
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Build renderer
+        run: npm run build:renderer
+
+      - name: Build electron
+        run: npm run build:electron
+
+      - name: Package for Windows
+        run: npm run package
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: List build outputs
+        run: |
+          Write-Host "Listing dist directory:"
+          Get-ChildItem -Path dist -ErrorAction Stop
+
+          Write-Host "`nChecking for win-unpacked directory:"
+          if (Test-Path "dist\win-unpacked") {
+            Write-Host "[OK] win-unpacked found"
+            Get-ChildItem -Path dist\win-unpacked | Select-Object -First 10
+          } else {
+            Write-Error "[ERROR] win-unpacked directory not found!"
+            exit 1
+          }
+        shell: powershell
+
+      - name: Create portable ZIP
+        run: |
+          $sourcePath = "dist\win-unpacked"
+          $destPath = "dist\hardware-manager-pro-windows-portable.zip"
+
+          Write-Host "Source path: $sourcePath"
+          Write-Host "Destination path: $destPath"
+
+          if (Test-Path $sourcePath) {
+            Write-Host "Creating ZIP archive..."
+
+            # Remove existing ZIP if present
+            if (Test-Path $destPath) {
+              Remove-Item $destPath -Force
+              Write-Host "Removed existing ZIP"
+            }
+
+            # Create the archive using full path
+            Compress-Archive -Path "$sourcePath\*" -DestinationPath $destPath -CompressionLevel Optimal
+
+            # Verify ZIP was created
+            if (Test-Path $destPath) {
+              $zipSize = (Get-Item $destPath).Length / 1MB
+              Write-Host "[SUCCESS] ZIP created successfully: $([math]::Round($zipSize, 2)) MB"
+            } else {
+              Write-Error "[ERROR] ZIP file was not created!"
+              exit 1
+            }
+          } else {
+            Write-Error "[ERROR] Source directory not found: $sourcePath"
+            exit 1
+          }
+        shell: powershell
+
+      - name: Upload Windows Portable ZIP
+        uses: actions/upload-artifact@v4
+        with:
+          name: hardware-manager-pro-windows-portable
+          path: dist/hardware-manager-pro-windows-portable.zip
+          retention-days: 30
+
+      - name: Upload Windows Executable
+        uses: actions/upload-artifact@v4
+        with:
+          name: hardware-manager-pro-windows-exe
+          path: dist/win-unpacked/hardware-manager-pro.exe
+          retention-days: 30
+
+      - name: Upload Windows Installer (if exists)
+        uses: actions/upload-artifact@v4
+        if: hashFiles('dist/*.exe') != ''
+        with:
+          name: hardware-manager-pro-windows-installer
+          path: dist/*.exe
+          retention-days: 30
+
+      - name: Create Release (on tag)
+        if: startsWith(github.ref, 'refs/tags/v')
+        uses: softprops/action-gh-release@v1
+        with:
+          files: |
+            dist/hardware-manager-pro-windows-portable.zip
+            dist/*.exe
+          draft: false
+          prerelease: false
+          generate_release_notes: true
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

@@ -100,6 +100,16 @@ function runMigrations(database: Database.Database): void {
       }
     }
 
+    // Migration: Add is_deleted column to customers table
+    try {
+      database.exec('ALTER TABLE customers ADD COLUMN is_deleted INTEGER DEFAULT 0');
+      console.log('✓ Added is_deleted column to customers');
+    } catch (e: any) {
+      if (!e.message.includes('duplicate column name')) {
+        console.error('Migration error (is_deleted):', e.message);
+      }
+    }
+
     console.log('Database migrations completed');
   } catch (error) {
     console.error('Migration error:', error);

@@ -122,6 +122,7 @@ contextBridge.exposeInMainWorld('api', {
   printer: {
     printReceipt: (data: any, printerName?: string) => ipcRenderer.invoke('printer:printReceipt', data, printerName),
     printInvoice: (invoiceId: number) => ipcRenderer.invoke('printer:printInvoice', invoiceId),
+    printPurchaseInvoice: (invoiceId: number) => ipcRenderer.invoke('printer:printPurchaseInvoice', invoiceId),
     printDeliveryNote: (deliveryNoteId: number, showPrices: boolean) =>
       ipcRenderer.invoke('printer:printDeliveryNote', deliveryNoteId, showPrices),
     getPrinters: () => ipcRenderer.invoke('printer:getPrinters'),
@@ -217,6 +218,7 @@ export interface ElectronAPI {
   printer: {
     printReceipt: (data: any, printerName?: string) => Promise<any>;
     printInvoice: (invoiceId: number) => Promise<any>;
+    printPurchaseInvoice: (invoiceId: number) => Promise<any>;
     printDeliveryNote: (deliveryNoteId: number, showPrices: boolean) => Promise<any>;
     getPrinters: () => Promise<any>;
   };

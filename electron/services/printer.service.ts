@@ -403,6 +403,227 @@ export async function generateInvoicePDF(invoiceId: number): Promise<{ success: 
 }
 
 /**
+ * Generate PDF for purchase invoice
+ */
+export async function generatePurchaseInvoicePDF(invoiceId: number): Promise<{ success: boolean; filePath?: string; error?: any }> {
+  try {
+    // Get purchase invoice data
+    const invoice = queryOne<any>(
+      `SELECT pi.*, s.name as supplier_name, s.phone as supplier_phone,
+              s.email as supplier_email, s.address as supplier_address
+       FROM purchase_invoices pi
+       JOIN suppliers s ON pi.supplier_id = s.id
+       WHERE pi.id = ?`,
+      [invoiceId]
+    );
+
+    if (!invoice) {
+      return { success: false, error: { code: 'INVOICE_NOT_FOUND', message: 'Purchase invoice not found' } };
+    }
+
+    // Get purchase invoice items
+    const items = query(
+      `SELECT pii.*, p.name as product_name, p.unit
+       FROM purchase_invoice_items pii
+       JOIN products p ON pii.product_id = p.id
+       WHERE pii.invoice_id = ?
+       ORDER BY pii.id`,
+      [invoiceId]
+    );
+
+    const company = getCompanyInfo();
+    const settings = getPrinterSettings();
+
+    // Build PDF content
+    const docDefinition: TDocumentDefinitions = {
+      pageSize: settings.a4_paper_size,
+      pageOrientation: settings.a4_orientation,
+      pageMargins: [40, 60, 40, 60],
+
+      header: (currentPage: number, pageCount: number) => {
+        return {
+          margin: [40, 20, 40, 0],
+          columns: [
+            {
+              width: '*',
+              text: company.name,
+              style: 'companyName',
+            },
+            {
+              width: 'auto',
+              text: 'PURCHASE INVOICE',
+              style: 'documentTitle',
+              alignment: 'right',
+            },
+          ],
+        };
+      },
+
+      content: [
+        // Company Info
+        {
+          columns: [
+            {
+              width: '60%',
+              stack: [
+                { text: company.name, style: 'companyInfo', bold: true },
+                company.address ? { text: company.address, style: 'companyInfo' } : null,
+                company.phone ? { text: `Phone: ${company.phone}`, style: 'companyInfo' } : null,
+                company.email ? { text: `Email: ${company.email}`, style: 'companyInfo' } : null,
+                company.tin ? { text: `TIN: ${company.tin}`, style: 'companyInfo' } : null,
+              ].filter(Boolean),
+            },
+            {
+              width: '40%',
+              stack: [
+                { text: `Purchase #: ${invoice.purchase_number}`, style: 'invoiceInfo' },
+                { text: `Date: ${format(new Date(invoice.purchase_date), 'dd/MM/yyyy')}`, style: 'invoiceInfo' },
+              ],
+            },
+          ],
+          margin: [0, 0, 0, 20],
+        },
+
+        // Supplier Info
+        {
+          text: 'SUPPLIER:',
+          style: 'sectionHeader',
+          margin: [0, 0, 0, 5],
+        },
+        {
+          stack: [
+            { text: invoice.supplier_name, bold: true },
+            invoice.supplier_address ? { text: invoice.supplier_address } : null,
+            invoice.supplier_phone ? { text: `Phone: ${invoice.supplier_phone}` } : null,
+            invoice.supplier_email ? { text: `Email: ${invoice.supplier_email}` } : null,
+          ].filter(Boolean),
+          style: 'customerInfo',
+          margin: [0, 0, 0, 20],
+        },
+
+        // Items Table
+        {
+          table: {
+            headerRows: 1,
+            widths: ['*', 'auto', 'auto', 'auto', 'auto'],
+            body: [
+              [
+                { text: 'ITEM', style: 'tableHeader' },
+                { text: 'QTY', style: 'tableHeader', alignment: 'center' },
+                { text: 'UNIT', style: 'tableHeader', alignment: 'center' },
+                { text: 'PRICE', style: 'tableHeader', alignment: 'right' },
+                { text: 'TOTAL', style: 'tableHeader', alignment: 'right' },
+              ],
+              ...items.map((item: any) => [
+                { text: item.product_name, style: 'tableCell' },
+                { text: item.quantity.toString(), style: 'tableCell', alignment: 'center' },
+                { text: item.unit || 'pcs', style: 'tableCell', alignment: 'center' },
+                { text: formatCurrency(item.unit_cost, invoice.currency), style: 'tableCell', alignment: 'right' },
+                { text: formatCurrency(item.line_total, invoice.currency), style: 'tableCell', alignment: 'right' },
+              ]),
+            ],
+          },
+          layout: {
+            hLineWidth: (i: number, node: any) => (i === 0 || i === 1 || i === node.table.body.length) ? 1 : 0.5,
+            vLineWidth: () => 0,
+            hLineColor: (i: number, node: any) => (i === 0 || i === 1 || i === node.table.body.length) ? '#000' : '#ddd',
+            paddingLeft: () => 5,
+            paddingRight: () => 5,
+            paddingTop: () => 5,
+            paddingBottom: () => 5,
+          },
+        },
+
+        // Totals
+        {
+          columns: [
+            { width: '*', text: '' },
+            {
+              width: 'auto',
+              table: {
+                widths: ['auto', 'auto'],
+                body: [
+                  [
+                    { text: 'Total:', alignment: 'right', bold: true, border: [false, true, false, false] },
+                    {
+                      text: formatCurrency(invoice.total_amount, invoice.currency),
+                      alignment: 'right',
+                      bold: true,
+                      border: [false, true, false, false],
+                    },
+                  ],
+                  invoice.currency !== 'UGX' ? [
+                    { text: 'Total (UGX):', alignment: 'right', bold: true, border: [false, false, false, false] },
+                    {
+                      text: formatCurrency(invoice.total_amount_ugx, 'UGX'),
+                      alignment: 'right',
+                      bold: true,
+                      border: [false, false, false, false],
+                    },
+                  ] : null,
+                ].filter(Boolean) as any,
+              },
+              layout: 'noBorders',
+            },
+          ],
+          margin: [0, 20, 0, 0],
+        },
+
+        // Notes
+        invoice.notes ? {
+          stack: [
+            { text: 'Notes:', bold: true, margin: [0, 20, 0, 5] },
+            { text: invoice.notes, italics: true },
+          ],
+        } : null,
+      ].filter(Boolean) as Content[],
+
+      styles: {
+        companyName: { fontSize: 18, bold: true },
+        documentTitle: { fontSize: 16, bold: true, color: '#333' },
+        companyInfo: { fontSize: 9, margin: [0, 2, 0, 0] },
+        invoiceInfo: { fontSize: 10, margin: [0, 2, 0, 0] },
+        sectionHeader: { fontSize: 11, bold: true, color: '#333' },
+        customerInfo: { fontSize: 9, margin: [0, 2, 0, 0] },
+        tableHeader: { fontSize: 10, bold: true, fillColor: '#f3f4f6', margin: [0, 5, 0, 5] },
+        tableCell: { fontSize: 9, margin: [0, 3, 0, 3] },
+      },
+    };
+
+    // Generate PDF
+    const pdfDoc = pdfMake.createPdf(docDefinition);
+
+    // Get temp directory
+    const tempDir = app.getPath('temp');
+    const fileName = `purchase_${invoice.purchase_number.replace(/[^a-zA-Z0-9]/g, '_')}_${Date.now()}.pdf`;
+    const filePath = path.join(tempDir, fileName);
+
+    // Write to file
+    await new Promise<void>((resolve, reject) => {
+      pdfDoc.getBuffer((buffer: Buffer) => {
+        fs.writeFile(filePath, buffer, (err) => {
+          if (err) reject(err);
+          else resolve();
+        });
+      });
+    });
+
+    console.log('Purchase invoice PDF generated:', filePath);
+
+    return {
+      success: true,
+      filePath,
+    };
+  } catch (error: any) {
+    console.error('Failed to generate purchase invoice PDF:', error);
+    return {
+      success: false,
+      error: { code: 'PDF_GENERATION_ERROR', message: error.message },
+    };
+  }
+}
+
+/**
  * Generate thermal receipt (80mm or 58mm)
  */
 export async function generateReceiptPDF(data: any, printerName?: string): Promise<{ success: boolean; filePath?: string; error?: any }> {

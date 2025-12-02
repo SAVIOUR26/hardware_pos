@@ -117,13 +117,12 @@ function ViewPurchase() {
         <div className="flex items-center gap-2">
           <button
             onClick={async () => {
-              toast.loading('Generating purchase invoice PDF...');
-              // Note: Using sales invoice printer - purchase printer to be implemented
-              const result = await window.api.printer.printInvoice(purchase.id);
+              toast.loading('Generating purchase invoice PDF...', { id: 'print-purchase' });
+              const result = await window.api.printer.printPurchaseInvoice(purchase.id);
               if (result.success) {
-                toast.success('Opening purchase invoice PDF...');
+                toast.success('Opening purchase invoice PDF...', { id: 'print-purchase' });
               } else {
-                toast.error('Failed to generate PDF: ' + (result.error?.message || 'Unknown error'));
+                toast.error('Failed to generate PDF: ' + (result.error?.message || 'Unknown error'), { id: 'print-purchase' });
               }
             }}
             className="px-4 py-2 bg-primary text-primary-foreground rounded-lg hover:opacity-90 transition-opacity flex items-center gap-2"

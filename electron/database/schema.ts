@@ -149,6 +149,7 @@ CREATE TABLE IF NOT EXISTS customers (
 
   -- Status
   is_active INTEGER DEFAULT 1,
+  is_deleted INTEGER DEFAULT 0,
 
   -- Audit
   created_at DATETIME DEFAULT CURRENT_TIMESTAMP,

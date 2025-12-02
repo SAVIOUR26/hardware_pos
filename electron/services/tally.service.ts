@@ -360,9 +360,9 @@ export async function exportVouchersToXML(
       for (const invoice of salesInvoices) {
         const items = db
           .prepare('SELECT * FROM sales_invoice_items WHERE invoice_id = ?')
-          .all(invoice.id);
+          .all((invoice as any).id);
 
-        const customer = db.prepare('SELECT * FROM customers WHERE id = ?').get(invoice.customer_id);
+        const customer = db.prepare('SELECT * FROM customers WHERE id = ?').get((invoice as any).customer_id);
 
         const voucher = buildSalesVoucher(invoice, items, customer);
         messages.push(voucher);
@@ -383,9 +383,9 @@ export async function exportVouchersToXML(
       for (const invoice of purchaseInvoices) {
         const items = db
           .prepare('SELECT * FROM purchase_invoice_items WHERE invoice_id = ?')
-          .all(invoice.id);
+          .all((invoice as any).id);
 
-        const supplier = db.prepare('SELECT * FROM suppliers WHERE id = ?').get(invoice.supplier_id);
+        const supplier = db.prepare('SELECT * FROM suppliers WHERE id = ?').get((invoice as any).supplier_id);
 
         const voucher = buildPurchaseVoucher(invoice, items, supplier);
         messages.push(voucher);

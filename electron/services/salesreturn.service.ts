@@ -148,7 +148,11 @@ export function createSalesReturn(params: CreateSalesReturnParams) {
 
     for (const item of params.items) {
       // Get product name
-      const product = db.prepare('SELECT name FROM products WHERE id = ?').get(item.product_id);
+      const product = db.prepare('SELECT name FROM products WHERE id = ?').get(item.product_id) as { name: string } | undefined;
+
+      if (!product) {
+        throw new Error(`Product with id ${item.product_id} not found`);
+      }
 
       // Calculate line total
       const base_amount = item.quantity_returned * item.unit_price;

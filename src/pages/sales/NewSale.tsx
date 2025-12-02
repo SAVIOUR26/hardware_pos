@@ -3,7 +3,6 @@ import { useNavigate } from 'react-router-dom';
 import { format } from 'date-fns';
 import {
   ShoppingCart,
-  Plus,
   Trash2,
   Search,
   User,
@@ -11,7 +10,6 @@ import {
   DollarSign,
   Calendar,
   Save,
-  Printer,
 } from 'lucide-react';
 import { toast } from 'sonner';
 import CustomerDialog from '@/components/forms/CustomerDialog';

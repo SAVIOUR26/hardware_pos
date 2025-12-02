@@ -8,7 +8,6 @@ import {
   DollarSign,
   Calendar,
   User,
-  Package,
   AlertCircle,
   CheckCircle,
   Clock,

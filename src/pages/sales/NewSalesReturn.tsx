@@ -8,7 +8,6 @@ import {
   CheckCircle,
   XCircle,
   Calendar,
-  DollarSign,
   Save,
   ArrowLeft,
 } from 'lucide-react';
@@ -59,7 +58,6 @@ function NewSalesReturn() {
   const [invoiceSearch, setInvoiceSearch] = useState('');
   const [invoiceResults, setInvoiceResults] = useState<Invoice[]>([]);
   const [selectedInvoice, setSelectedInvoice] = useState<any>(null);
-  const [invoiceItems, setInvoiceItems] = useState<InvoiceItem[]>([]);
   const [showInvoiceDropdown, setShowInvoiceDropdown] = useState(false);
 
   // Return data
@@ -109,7 +107,6 @@ function NewSalesReturn() {
       if (result.success) {
         const invoice = result.data;
         setSelectedInvoice(invoice);
-        setInvoiceItems(invoice.items || []);
 
         // Initialize return items with all invoice items
         const items: ReturnItem[] = invoice.items.map((item: InvoiceItem) => ({

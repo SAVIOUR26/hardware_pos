@@ -143,6 +143,12 @@ export interface ElectronAPI {
     markAsTaken: (invoiceId: number, items: any[]) => Promise<any>;
     getNotTakenReport: (filters?: any) => Promise<any>;
   };
+  salesReturn: {
+    create: (data: any) => Promise<any>;
+    get: (id: number) => Promise<any>;
+    list: (filters?: any) => Promise<any>;
+    updateRefund: (params: any) => Promise<any>;
+  };
   purchase: {
     create: (data: any) => Promise<any>;
     update: (id: number, data: any) => Promise<any>;

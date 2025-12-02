@@ -53,7 +53,13 @@ export default function TallySync() {
   const handleImportMasters = async () => {
     setSyncing(true);
     try {
-      toast.loading('Selecting Tally XML file...', { id: 'import-tally' });
+      // Step 1: File selection
+      toast.loading('📁 Opening file selector...', { id: 'import-tally' });
+
+      // Step 2: Reading file
+      setTimeout(() => {
+        toast.loading('📖 Reading Tally XML file...', { id: 'import-tally' });
+      }, 300);
 
       const result = await window.api.tally.importMasters(null, {
         importCurrencies: true,
@@ -66,31 +72,49 @@ export default function TallySync() {
         const data = result.data;
 
         if (data.status === 'Success') {
-          toast.success(
-            `✅ Import Successful!\n
-            Created: ${data.records_created} | Updated: ${data.records_updated}\n
-            Customers: ${data.summary.customers || 0} | Suppliers: ${data.summary.suppliers || 0} | Products: ${data.summary.products || 0}`,
-            { id: 'import-tally', duration: 5000 }
-          );
+          // Success with detailed breakdown
+          const summary = [
+            `✅ Import Completed Successfully!`,
+            ``,
+            `📊 Summary:`,
+            `  • Total Processed: ${data.records_processed || 0} records`,
+            `  • Created: ${data.records_created} new records`,
+            `  • Updated: ${data.records_updated} existing records`,
+            ``,
+            `📦 Breakdown:`,
+            `  • Customers: ${data.summary.customers || 0}`,
+            `  • Suppliers: ${data.summary.suppliers || 0}`,
+            `  • Products: ${data.summary.products || 0}`,
+            `  • Currencies: ${data.summary.currencies || 0}`,
+            `  • Units: ${data.summary.units || 0}`,
+          ].join('\n');
+
+          toast.success(summary, { id: 'import-tally', duration: 8000 });
         } else if (data.status === 'Partial') {
           toast.warning(
-            `⚠️ Import Completed with Errors\n
-            Created: ${data.records_created} | Errors: ${data.errors_count}`,
-            { id: 'import-tally', duration: 5000 }
+            `⚠️ Import Completed with Errors\n\nCreated: ${data.records_created} | Updated: ${data.records_updated}\nErrors: ${data.errors_count}\n\nCheck sync history for details.`,
+            { id: 'import-tally', duration: 7000 }
           );
         } else {
-          toast.error(`❌ Import Failed: ${data.errors[0] || 'Unknown error'}`, {
+          toast.error(`❌ Import Failed\n\n${data.errors[0] || 'Unknown error'}`, {
             id: 'import-tally',
+            duration: 6000,
           });
         }
 
         // Reload history
         await loadSyncHistory();
       } else {
-        toast.error(result.error?.message || 'Import failed', { id: 'import-tally' });
+        toast.error(`❌ Import Failed\n\n${result.error?.message || 'Unknown error'}`, {
+          id: 'import-tally',
+          duration: 5000,
+        });
       }
     } catch (error: any) {
-      toast.error('Import failed: ' + error.message, { id: 'import-tally' });
+      toast.error(`❌ Import Error\n\n${error.message}`, {
+        id: 'import-tally',
+        duration: 5000,
+      });
     } finally {
       setSyncing(false);
     }
@@ -99,12 +123,18 @@ export default function TallySync() {
   const handleExportVouchers = async () => {
     setSyncing(true);
     try {
-      toast.loading('Exporting vouchers to Tally XML...', { id: 'export-tally' });
+      // Step 1: Preparing
+      toast.loading('📤 Preparing voucher export...', { id: 'export-tally' });
 
       // Get current month date range
       const now = new Date();
       const firstDay = new Date(now.getFullYear(), now.getMonth(), 1);
       const lastDay = new Date(now.getFullYear(), now.getMonth() + 1, 0);
+
+      // Step 2: Processing
+      setTimeout(() => {
+        toast.loading('🔄 Processing sales and purchase vouchers...', { id: 'export-tally' });
+      }, 300);
 
       const result = await window.api.tally.exportVouchers(
         {
@@ -118,18 +148,35 @@ export default function TallySync() {
       );
 
       if (result.success && result.data.success) {
-        toast.success(`✅ Vouchers exported successfully!\nFile: ${result.data.filePath}`, {
+        const exportMsg = [
+          `✅ Vouchers Exported Successfully!`,
+          ``,
+          `📁 File saved to:`,
+          `${result.data.filePath}`,
+          ``,
+          `📅 Period: ${format(firstDay, 'MMM dd')} - ${format(lastDay, 'MMM dd, yyyy')}`,
+          ``,
+          `You can now import this file into Tally Prime.`,
+        ].join('\n');
+
+        toast.success(exportMsg, {
           id: 'export-tally',
-          duration: 5000,
+          duration: 8000,
         });
 
         // Reload history
         await loadSyncHistory();
       } else {
-        toast.error(result.data?.error || 'Export failed', { id: 'export-tally' });
+        toast.error(`❌ Export Failed\n\n${result.data?.error || 'Unknown error'}`, {
+          id: 'export-tally',
+          duration: 5000,
+        });
       }
     } catch (error: any) {
-      toast.error('Export failed: ' + error.message, { id: 'export-tally' });
+      toast.error(`❌ Export Error\n\n${error.message}`, {
+        id: 'export-tally',
+        duration: 5000,
+      });
     } finally {
       setSyncing(false);
     }

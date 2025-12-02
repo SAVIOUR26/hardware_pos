@@ -116,7 +116,16 @@ function ViewPurchase() {
         </div>
         <div className="flex items-center gap-2">
           <button
-            onClick={() => toast.info('Print feature coming soon')}
+            onClick={async () => {
+              toast.loading('Generating purchase invoice PDF...');
+              // Note: Using sales invoice printer - purchase printer to be implemented
+              const result = await window.api.printer.printInvoice(purchase.id);
+              if (result.success) {
+                toast.success('Opening purchase invoice PDF...');
+              } else {
+                toast.error('Failed to generate PDF: ' + (result.error?.message || 'Unknown error'));
+              }
+            }}
             className="px-4 py-2 bg-primary text-primary-foreground rounded-lg hover:opacity-90 transition-opacity flex items-center gap-2"
           >
             <Printer className="w-4 h-4" />

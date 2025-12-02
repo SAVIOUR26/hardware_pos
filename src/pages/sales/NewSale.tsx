@@ -243,8 +243,12 @@ function NewSale() {
 
         // Ask if user wants to print
         if (confirm('Invoice created successfully! Would you like to print it?')) {
-          // TODO: Implement printing
-          toast.info('Printing feature coming soon');
+          const printResult = await window.api.printer.printInvoice(result.data.invoice.id);
+          if (printResult.success) {
+            toast.success('Opening invoice PDF...');
+          } else {
+            toast.error('Failed to generate PDF: ' + (printResult.error?.message || 'Unknown error'));
+          }
         }
 
         // Navigate to invoice view or sales list

@@ -87,6 +87,7 @@ interface ElectronAPI {
   };
   printer: {
     printReceipt: (data: any, printerName?: string) => Promise<any>;
+    printThermalReceipt: (invoiceId: number) => Promise<any>;
     printInvoice: (invoiceId: number) => Promise<any>;
     printPurchaseInvoice: (invoiceId: number) => Promise<any>;
     printDeliveryNote: (deliveryNoteId: number, showPrices: boolean) => Promise<any>;

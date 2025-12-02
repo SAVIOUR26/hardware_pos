@@ -33,6 +33,7 @@ export default function TallySync() {
   const [syncing, setSyncing] = useState(false);
   const [syncHistory, setSyncHistory] = useState<SyncHistoryItem[]>([]);
   const [selectedHistory, setSelectedHistory] = useState<SyncHistoryItem | null>(null);
+  const [exportDateRange, setExportDateRange] = useState<'1day' | '1week' | '1month'>('1month');
 
   // Load sync history on mount
   useEffect(() => {
@@ -126,10 +127,28 @@ export default function TallySync() {
       // Step 1: Preparing
       toast.loading('📤 Preparing voucher export...', { id: 'export-tally' });
 
-      // Get current month date range
+      // Calculate date range based on selection
       const now = new Date();
-      const firstDay = new Date(now.getFullYear(), now.getMonth(), 1);
-      const lastDay = new Date(now.getFullYear(), now.getMonth() + 1, 0);
+      let firstDay: Date;
+      let lastDay: Date = now;
+
+      switch (exportDateRange) {
+        case '1day':
+          // Today only
+          firstDay = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+          lastDay = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+          break;
+        case '1week':
+          // Last 7 days
+          firstDay = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);
+          break;
+        case '1month':
+        default:
+          // Current month
+          firstDay = new Date(now.getFullYear(), now.getMonth(), 1);
+          lastDay = new Date(now.getFullYear(), now.getMonth() + 1, 0);
+          break;
+      }
 
       // Step 2: Processing
       setTimeout(() => {
@@ -257,13 +276,54 @@ export default function TallySync() {
               <p className="text-sm text-muted-foreground mb-4">
                 Export sales and purchase invoices as Tally-compatible XML vouchers
               </p>
+
+              {/* Date Range Selector */}
+              <div className="mb-4">
+                <label className="text-sm font-medium mb-2 block">Select Export Period:</label>
+                <div className="flex gap-2">
+                  <button
+                    onClick={() => setExportDateRange('1day')}
+                    className={`px-4 py-2 rounded-lg text-sm font-medium transition-all ${
+                      exportDateRange === '1day'
+                        ? 'bg-green-600 text-white shadow-md'
+                        : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                    }`}
+                  >
+                    📅 Today
+                  </button>
+                  <button
+                    onClick={() => setExportDateRange('1week')}
+                    className={`px-4 py-2 rounded-lg text-sm font-medium transition-all ${
+                      exportDateRange === '1week'
+                        ? 'bg-green-600 text-white shadow-md'
+                        : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                    }`}
+                  >
+                    📅 Last 7 Days
+                  </button>
+                  <button
+                    onClick={() => setExportDateRange('1month')}
+                    className={`px-4 py-2 rounded-lg text-sm font-medium transition-all ${
+                      exportDateRange === '1month'
+                        ? 'bg-green-600 text-white shadow-md'
+                        : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                    }`}
+                  >
+                    📅 This Month
+                  </button>
+                </div>
+              </div>
+
+              {/* Export Button */}
               <button
                 onClick={handleExportVouchers}
                 disabled={syncing}
                 className="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors disabled:opacity-50 flex items-center gap-2"
               >
                 <Upload className="w-4 h-4" />
-                Export This Month
+                {exportDateRange === '1day' && 'Export Today'}
+                {exportDateRange === '1week' && 'Export Last 7 Days'}
+                {exportDateRange === '1month' && 'Export This Month'}
               </button>
             </div>
           </div>

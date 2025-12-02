@@ -242,12 +242,29 @@ function NewSale() {
         );
 
         // Ask if user wants to print
-        if (confirm('Invoice created successfully! Would you like to print it?')) {
+        const printChoice = prompt(
+          'Invoice created successfully! Choose print format:\n' +
+          '1 - A4 Invoice (Standard)\n' +
+          '2 - Thermal Receipt (3-inch printer)\n' +
+          '0 - Skip printing\n\n' +
+          'Enter your choice (0-2):'
+        );
+
+        if (printChoice === '1') {
+          // Print A4 Invoice
           const printResult = await window.api.printer.printInvoice(result.data.invoice.id);
           if (printResult.success) {
-            toast.success('Opening invoice PDF...');
+            toast.success('Opening A4 invoice PDF...');
           } else {
             toast.error('Failed to generate PDF: ' + (printResult.error?.message || 'Unknown error'));
+          }
+        } else if (printChoice === '2') {
+          // Print Thermal Receipt
+          const printResult = await window.api.printer.printThermalReceipt(result.data.invoice.id);
+          if (printResult.success) {
+            toast.success('Opening thermal receipt PDF...');
+          } else {
+            toast.error('Failed to generate thermal receipt: ' + (printResult.error?.message || 'Unknown error'));
           }
         }
 

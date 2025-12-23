@@ -22,6 +22,7 @@ contextBridge.exposeInMainWorld('api', {
     getStats: () => ipcRenderer.invoke('sales:getStats'),
     markAsTaken: (invoiceId: number, items: any[]) => ipcRenderer.invoke('sales:markAsTaken', invoiceId, items),
     getNotTakenReport: (filters?: any) => ipcRenderer.invoke('sales:getNotTakenReport', filters),
+    exportToExcel: (filters?: any) => ipcRenderer.invoke('sales:exportToExcel', filters),
   },
 
   // Purchase API (to be implemented)
@@ -117,6 +118,7 @@ contextBridge.exposeInMainWorld('api', {
     printDeliveryNote: (deliveryNoteId: number, showPrices: boolean) =>
       ipcRenderer.invoke('printer:printDeliveryNote', deliveryNoteId, showPrices),
     getPrinters: () => ipcRenderer.invoke('printer:getPrinters'),
+    printThermalReceipt: (invoiceId: number) => ipcRenderer.invoke('printer:printThermalReceipt', invoiceId),
   },
 });
 
@@ -134,6 +136,7 @@ export interface ElectronAPI {
     getStats: () => Promise<any>;
     markAsTaken: (invoiceId: number, items: any[]) => Promise<any>;
     getNotTakenReport: (filters?: any) => Promise<any>;
+    exportToExcel: (filters?: any) => Promise<any>;
   };
   purchase: {
     create: (data: any) => Promise<any>;
@@ -205,6 +208,7 @@ export interface ElectronAPI {
     printInvoice: (invoiceId: number) => Promise<any>;
     printDeliveryNote: (deliveryNoteId: number, showPrices: boolean) => Promise<any>;
     getPrinters: () => Promise<any>;
+    printThermalReceipt: (invoiceId: number) => Promise<any>;
   };
 }
 

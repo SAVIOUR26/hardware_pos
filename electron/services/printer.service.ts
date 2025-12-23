@@ -403,7 +403,7 @@ export async function generateInvoicePDF(invoiceId: number): Promise<{ success: 
 }
 
 /**
- * Generate thermal receipt (80mm or 58mm)
+ * Generate thermal receipt (80mm or 58mm) - Optimized for Xprinter
  */
 export async function generateReceiptPDF(data: any, printerName?: string): Promise<{ success: boolean; filePath?: string; error?: any }> {
   try {
@@ -411,13 +411,13 @@ export async function generateReceiptPDF(data: any, printerName?: string): Promi
     const settings = getPrinterSettings();
     const paperWidth = settings.thermal_paper_width;
 
-    // Build receipt content
+    // Build receipt content with optimized sizing for 80mm thermal printers
     const docDefinition: TDocumentDefinitions = {
       pageSize: {
-        width: paperWidth * 2.83465, // mm to points
+        width: paperWidth * 2.83465, // mm to points (80mm = 226.77 points)
         height: 'auto',
       },
-      pageMargins: [10, 10, 10, 10],
+      pageMargins: [8, 8, 8, 8], // Reduced margins for thermal
 
       content: [
         // Company Name
@@ -438,14 +438,14 @@ export async function generateReceiptPDF(data: any, printerName?: string): Promi
         } : null,
 
         // Separator
-        { text: '─'.repeat(40), alignment: 'center', margin: [0, 5, 0, 5] },
+        { text: '─'.repeat(42), alignment: 'center', margin: [0, 4, 0, 4], fontSize: 8 },
 
         // Receipt details
         {
-          text: 'RECEIPT',
+          text: 'SALES RECEIPT',
           style: 'receiptTitle',
           alignment: 'center',
-          margin: [0, 0, 0, 10],
+          margin: [0, 0, 0, 8],
         },
 
         // Transaction info
@@ -466,11 +466,11 @@ export async function generateReceiptPDF(data: any, printerName?: string): Promi
             { text: 'Customer:', width: 'auto', style: 'receiptInfo' },
             { text: data.customerName, width: '*', style: 'receiptInfo', alignment: 'right' },
           ],
-          margin: [0, 0, 0, 5],
+          margin: [0, 0, 0, 4],
         } : null,
 
         // Separator
-        { text: '─'.repeat(40), alignment: 'center', margin: [0, 5, 0, 5] },
+        { text: '─'.repeat(42), alignment: 'center', margin: [0, 4, 0, 4], fontSize: 8 },
 
         // Items
         ...(data.items || []).map((item: any) => [
@@ -483,12 +483,12 @@ export async function generateReceiptPDF(data: any, printerName?: string): Promi
               { text: `${item.quantity} × ${formatCurrency(item.price, data.currency)}`, width: '*', style: 'receiptInfo' },
               { text: formatCurrency(item.total, data.currency), width: 'auto', style: 'receiptInfo', alignment: 'right' },
             ],
-            margin: [0, 0, 0, 5],
+            margin: [0, 0, 0, 4],
           },
         ]).flat(),
 
         // Separator
-        { text: '─'.repeat(40), alignment: 'center', margin: [0, 5, 0, 5] },
+        { text: '─'.repeat(42), alignment: 'center', margin: [0, 4, 0, 4], fontSize: 8 },
 
         // Total
         {
@@ -496,7 +496,7 @@ export async function generateReceiptPDF(data: any, printerName?: string): Promi
             { text: 'TOTAL:', width: '*', style: 'receiptTotal', bold: true },
             { text: formatCurrency(data.total, data.currency), width: 'auto', style: 'receiptTotal', bold: true, alignment: 'right' },
           ],
-          margin: [0, 5, 0, 5],
+          margin: [0, 4, 0, 4],
         },
 
         data.paid ? {
@@ -514,7 +514,7 @@ export async function generateReceiptPDF(data: any, printerName?: string): Promi
         } : null,
 
         // Footer
-        { text: '─'.repeat(40), alignment: 'center', margin: [0, 10, 0, 5] },
+        { text: '─'.repeat(42), alignment: 'center', margin: [0, 8, 0, 4], fontSize: 8 },
         {
           text: 'Thank you for your business!',
           style: 'receiptFooter',
@@ -525,32 +525,38 @@ export async function generateReceiptPDF(data: any, printerName?: string): Promi
           style: 'receiptFooter',
           alignment: 'center',
         } : null,
+        {
+          text: format(new Date(), 'dd/MM/yyyy HH:mm:ss'),
+          style: 'receiptFooter',
+          alignment: 'center',
+          margin: [0, 4, 0, 0],
+        },
       ].filter(Boolean) as Content[],
 
       styles: {
         receiptHeader: {
-          fontSize: 14,
+          fontSize: 16,
           bold: true,
-          margin: [0, 0, 0, 5],
+          margin: [0, 0, 0, 4],
         },
         receiptTitle: {
-          fontSize: 12,
+          fontSize: 14,
           bold: true,
         },
         receiptInfo: {
-          fontSize: 9,
-          lineHeight: 1.3,
+          fontSize: 10,
+          lineHeight: 1.2,
         },
         receiptItem: {
-          fontSize: 10,
+          fontSize: 11,
           bold: true,
         },
         receiptTotal: {
-          fontSize: 11,
+          fontSize: 13,
         },
         receiptFooter: {
-          fontSize: 8,
-          lineHeight: 1.3,
+          fontSize: 9,
+          lineHeight: 1.2,
         },
       },
     };
@@ -578,6 +584,61 @@ export async function generateReceiptPDF(data: any, printerName?: string): Promi
     return {
       success: false,
       error: { code: 'PDF_GENERATION_ERROR', message: error.message },
+    };
+  }
+}
+
+/**
+ * Generate thermal receipt directly from sales invoice (80mm optimized for Xprinter)
+ */
+export async function generateSalesThermalReceipt(invoiceId: number): Promise<{ success: boolean; filePath?: string; error?: any }> {
+  try {
+    // Get invoice data
+    const invoice = queryOne<any>(
+      `SELECT si.*, c.name as customer_name, c.phone as customer_phone
+       FROM sales_invoices si
+       JOIN customers c ON si.customer_id = c.id
+       WHERE si.id = ?`,
+      [invoiceId]
+    );
+
+    if (!invoice) {
+      return { success: false, error: { code: 'INVOICE_NOT_FOUND', message: 'Invoice not found' } };
+    }
+
+    // Get invoice items
+    const items = query(
+      `SELECT sii.*, p.name as product_name
+       FROM sales_invoice_items sii
+       JOIN products p ON sii.product_id = p.id
+       WHERE sii.invoice_id = ?
+       ORDER BY sii.id`,
+      [invoiceId]
+    );
+
+    // Format data for receipt
+    const receiptData = {
+      date: format(new Date(invoice.invoice_date), 'dd/MM/yyyy HH:mm'),
+      invoiceNumber: invoice.invoice_number,
+      customerName: invoice.customer_name,
+      currency: invoice.currency,
+      items: items.map((item: any) => ({
+        name: item.product_name,
+        quantity: item.quantity,
+        price: item.unit_price,
+        total: item.line_total,
+      })),
+      total: invoice.total_amount,
+      paid: invoice.amount_paid,
+      change: invoice.amount_paid > invoice.total_amount ? invoice.amount_paid - invoice.total_amount : 0,
+    };
+
+    return await generateReceiptPDF(receiptData);
+  } catch (error: any) {
+    console.error('Failed to generate sales thermal receipt:', error);
+    return {
+      success: false,
+      error: { code: 'THERMAL_RECEIPT_ERROR', message: error.message },
     };
   }
 }

@@ -1,5 +1,6 @@
-import { ipcMain } from 'electron';
+import { ipcMain, shell } from 'electron';
 import * as salesService from '../services/sales.service';
+import * as excelExportService from '../services/excel-export.service';
 
 /**
  * Sales IPC Handlers
@@ -91,6 +92,28 @@ export function registerSalesHandlers() {
         success: false,
         error: {
           code: 'CONVERT_QUOTATION_ERROR',
+          message: error.message,
+        },
+      };
+    }
+  });
+
+  // Export sales vouchers to Excel (Tally Prime format)
+  ipcMain.handle('sales:exportToExcel', async (event, filters) => {
+    try {
+      const result = await excelExportService.exportSalesVouchersToExcel(filters);
+
+      // Open file location if successful
+      if (result.success && result.filePath) {
+        shell.showItemInFolder(result.filePath);
+      }
+
+      return result;
+    } catch (error: any) {
+      return {
+        success: false,
+        error: {
+          code: 'EXPORT_ERROR',
           message: error.message,
         },
       };

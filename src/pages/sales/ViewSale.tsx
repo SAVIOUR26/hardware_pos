@@ -146,6 +146,25 @@ function ViewSale() {
           <button
             onClick={async () => {
               try {
+                toast.loading('Generating thermal receipt...', { id: 'print-thermal' });
+                const result = await window.api.printer.printThermalReceipt(invoice.id);
+                if (result.success) {
+                  toast.success('Thermal receipt opened', { id: 'print-thermal' });
+                } else {
+                  toast.error('Failed to generate receipt', { id: 'print-thermal' });
+                }
+              } catch (error) {
+                toast.error('Failed to print thermal receipt', { id: 'print-thermal' });
+              }
+            }}
+            className="px-4 py-2 bg-green-600 text-white rounded-lg hover:opacity-90 transition-opacity flex items-center gap-2"
+          >
+            <Printer className="w-4 h-4" />
+            Thermal (3")
+          </button>
+          <button
+            onClick={async () => {
+              try {
                 toast.loading('Generating invoice...', { id: 'print-invoice' });
                 const result = await window.api.printer.printInvoice(invoice.id);
                 if (result.success) {
@@ -160,7 +179,7 @@ function ViewSale() {
             className="px-4 py-2 bg-primary text-primary-foreground rounded-lg hover:opacity-90 transition-opacity flex items-center gap-2"
           >
             <Printer className="w-4 h-4" />
-            Print Invoice
+            Print A4
           </button>
         </div>
       </div>

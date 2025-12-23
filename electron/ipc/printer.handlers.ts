@@ -46,5 +46,17 @@ export function registerPrinterHandlers() {
     return printerService.getAvailablePrinters();
   });
 
+  // Print thermal receipt for sales invoice (3-inch / 80mm optimized)
+  ipcMain.handle('printer:printThermalReceipt', async (_event, invoiceId: number) => {
+    const result = await printerService.generateSalesThermalReceipt(invoiceId);
+
+    if (result.success && result.filePath) {
+      // Open PDF with default viewer
+      shell.openPath(result.filePath);
+    }
+
+    return result;
+  });
+
   console.log('Printer IPC handlers registered');
 }

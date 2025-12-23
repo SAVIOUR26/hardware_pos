@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { format } from 'date-fns';
-import { PackageX, Phone, Calendar, DollarSign, Package, CheckCircle, Clock } from 'lucide-react';
+import { PackageX, Phone, Calendar, DollarSign, Package, CheckCircle, Clock, Search } from 'lucide-react';
 import { toast } from 'sonner';
 import MarkAsTakenDialog from '@/components/forms/MarkAsTakenDialog';
 
@@ -27,15 +27,18 @@ function NotTakenReport() {
   const [report, setReport] = useState<NotTakenReport | null>(null);
   const [loading, setLoading] = useState(true);
   const [selectedInvoice, setSelectedInvoice] = useState<NotTakenItem | null>(null);
+  const [searchTerm, setSearchTerm] = useState('');
 
   useEffect(() => {
     loadReport();
-  }, []);
+  }, [searchTerm]);
 
   const loadReport = async () => {
     try {
       setLoading(true);
-      const result = await window.api.sales.getNotTakenReport({});
+      const result = await window.api.sales.getNotTakenReport({
+        search: searchTerm || undefined,
+      });
       if (result.success) {
         setReport(result.data);
       } else {
@@ -100,6 +103,20 @@ function NotTakenReport() {
         >
           Refresh
         </button>
+      </div>
+
+      {/* Search Bar */}
+      <div className="bg-card border border-border rounded-lg p-4">
+        <div className="relative">
+          <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+          <input
+            type="text"
+            value={searchTerm}
+            onChange={(e) => setSearchTerm(e.target.value)}
+            placeholder="Search by invoice number or customer name..."
+            className="w-full pl-10 pr-3 py-2 border border-border rounded-lg focus:outline-none focus:ring-2 focus:ring-primary"
+          />
+        </div>
       </div>
 
       {/* Summary Cards */}

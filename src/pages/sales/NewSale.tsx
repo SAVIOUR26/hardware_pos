@@ -60,7 +60,7 @@ function NewSale() {
   const [items, setItems] = useState<InvoiceItem[]>([]);
   const [invoiceDate, setInvoiceDate] = useState(format(new Date(), 'yyyy-MM-dd'));
   const [currency, setCurrency] = useState<'UGX' | 'USD'>('UGX');
-  const [exchangeRate, setExchangeRate] = useState(1);
+  const [exchangeRate, setExchangeRate] = useState(3750); // Default USD to UGX exchange rate
   const [isQuotation, setIsQuotation] = useState(false);
 
   // Payment details
@@ -561,15 +561,20 @@ function NewSale() {
 
               {currency === 'USD' && (
                 <div>
-                  <label className="block text-sm font-medium mb-2">Exchange Rate</label>
+                  <label className="block text-sm font-medium mb-2">
+                    Exchange Rate (1 USD = ? UGX)
+                  </label>
                   <input
                     type="number"
                     min="0"
-                    step="0.01"
+                    step="1"
                     value={exchangeRate}
-                    onChange={(e) => setExchangeRate(parseFloat(e.target.value) || 1)}
+                    onChange={(e) => setExchangeRate(parseFloat(e.target.value) || 3750)}
                     className="w-full px-3 py-2 border border-border rounded-lg focus:outline-none focus:ring-2 focus:ring-primary"
                   />
+                  <p className="text-xs text-muted-foreground mt-1">
+                    Current rate: 1 USD = {exchangeRate.toLocaleString()} UGX
+                  </p>
                 </div>
               )}
             </div>
@@ -601,6 +606,12 @@ function NewSale() {
                   <span>Total:</span>
                   <span className="text-primary">{formatCurrency(totals.total)}</span>
                 </div>
+                {currency === 'USD' && (
+                  <div className="flex justify-between text-sm text-muted-foreground mt-1">
+                    <span>Equivalent in UGX:</span>
+                    <span>UGX {(totals.total * exchangeRate).toLocaleString('en-UG', { minimumFractionDigits: 0 })}</span>
+                  </div>
+                )}
               </div>
             </div>
           </div>

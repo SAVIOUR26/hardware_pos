@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { ShoppingCart, Plus, Search, Eye, DollarSign, Calendar, User, Printer } from 'lucide-react';
+import { ShoppingCart, Plus, Search, Eye, DollarSign, Calendar, User, Printer, Download } from 'lucide-react';
 import { toast } from 'sonner';
 import { format } from 'date-fns';
 
@@ -24,6 +24,9 @@ function SalesIndex() {
   const [searchTerm, setSearchTerm] = useState('');
   const [paymentFilter, setPaymentFilter] = useState('');
   const [deliveryFilter, setDeliveryFilter] = useState('');
+  const [startDate, setStartDate] = useState('');
+  const [endDate, setEndDate] = useState('');
+  const [exporting, setExporting] = useState(false);
 
   useEffect(() => {
     loadInvoices();
@@ -63,6 +66,34 @@ function SalesIndex() {
 
   const formatDate = (dateString: string) => {
     return format(new Date(dateString), 'MMM dd, yyyy');
+  };
+
+  const handleExportToExcel = async () => {
+    try {
+      if (!startDate || !endDate) {
+        toast.error('Please select start and end dates for export');
+        return;
+      }
+
+      setExporting(true);
+      toast.loading('Exporting sales vouchers...', { id: 'export-excel' });
+
+      const result = await window.api.sales.exportToExcel({
+        startDate,
+        endDate,
+      });
+
+      if (result.success) {
+        toast.success('Sales vouchers exported successfully! File location opened.', { id: 'export-excel' });
+      } else {
+        toast.error(result.error?.message || 'Failed to export sales vouchers', { id: 'export-excel' });
+      }
+    } catch (error: any) {
+      console.error('Error exporting sales:', error);
+      toast.error('Failed to export sales vouchers', { id: 'export-excel' });
+    } finally {
+      setExporting(false);
+    }
   };
 
   const getPaymentStatusColor = (status: string) => {
@@ -150,7 +181,7 @@ function SalesIndex() {
 
       {/* Filters */}
       <div className="bg-card border border-border rounded-lg p-4">
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
           <div className="relative">
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
             <input
@@ -187,6 +218,45 @@ function SalesIndex() {
               <option value="Taken">Taken</option>
             </select>
           </div>
+        </div>
+
+        {/* Export Section with Date Range */}
+        <div className="border-t border-border pt-4">
+          <div className="flex items-center gap-4">
+            <div className="flex-1 grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div>
+                <label className="block text-sm font-medium mb-1">Start Date</label>
+                <input
+                  type="date"
+                  value={startDate}
+                  onChange={(e) => setStartDate(e.target.value)}
+                  className="w-full px-3 py-2 border border-border rounded-lg focus:outline-none focus:ring-2 focus:ring-primary"
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium mb-1">End Date</label>
+                <input
+                  type="date"
+                  value={endDate}
+                  onChange={(e) => setEndDate(e.target.value)}
+                  className="w-full px-3 py-2 border border-border rounded-lg focus:outline-none focus:ring-2 focus:ring-primary"
+                />
+              </div>
+            </div>
+            <div className="flex items-end">
+              <button
+                onClick={handleExportToExcel}
+                disabled={exporting || !startDate || !endDate}
+                className="px-4 py-2 bg-green-600 text-white rounded-lg hover:opacity-90 transition-opacity disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
+              >
+                <Download className="w-4 h-4" />
+                {exporting ? 'Exporting...' : 'Export to Excel'}
+              </button>
+            </div>
+          </div>
+          <p className="text-xs text-muted-foreground mt-2">
+            Export sales vouchers in Tally Prime format for the selected date range
+          </p>
         </div>
       </div>
 

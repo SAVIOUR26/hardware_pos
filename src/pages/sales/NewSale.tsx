@@ -3,7 +3,6 @@ import { useNavigate } from 'react-router-dom';
 import { format } from 'date-fns';
 import {
   ShoppingCart,
-  Plus,
   Trash2,
   Search,
   User,
@@ -11,7 +10,6 @@ import {
   DollarSign,
   Calendar,
   Save,
-  Printer,
 } from 'lucide-react';
 import { toast } from 'sonner';
 import CustomerDialog from '@/components/forms/CustomerDialog';
@@ -239,24 +237,23 @@ function NewSale() {
       const result = await window.api.sales.create(invoiceData);
 
       if (result.success) {
+        // Show success message
         toast.success(
-          `${isQuotation ? 'Quotation' : 'Invoice'} ${result.data.invoice.invoice_number} created!`
+          `✅ ${isQuotation ? 'Quotation' : 'Invoice'} ${result.data.invoice_number} created successfully!\n\n` +
+          `📋 Go to Sales Dashboard to view and print your ${isQuotation ? 'quotation' : 'invoice'}.`,
+          { duration: 5000 }
         );
 
-        // Ask if user wants to print
-        if (confirm('Invoice created successfully! Would you like to print it?')) {
-          // TODO: Implement printing
-          toast.info('Printing feature coming soon');
-        }
-
-        // Navigate to invoice view or sales list
-        navigate('/sales');
+        // Navigate to sales list after a short delay
+        setTimeout(() => {
+          navigate('/sales');
+        }, 1500);
       } else {
         toast.error(result.error?.message || 'Failed to create invoice');
       }
     } catch (error: any) {
       console.error('Error creating invoice:', error);
-      toast.error('Failed to create invoice');
+      toast.error('Failed to create invoice: ' + error.message);
     } finally {
       setSaving(false);
     }

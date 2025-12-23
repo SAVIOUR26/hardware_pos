@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { BarChart3, DollarSign, ShoppingCart, TrendingUp } from 'lucide-react';
+import { BarChart3, DollarSign, ShoppingCart } from 'lucide-react';
 import SalesReport from './SalesReport';
 import PurchaseReport from './PurchaseReport';
 

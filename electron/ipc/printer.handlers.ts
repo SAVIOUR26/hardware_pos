@@ -5,9 +5,33 @@ import * as printerService from '../services/printer.service';
  * Register Printer IPC Handlers
  */
 export function registerPrinterHandlers() {
-  // Print invoice
+  // Print sales invoice
   ipcMain.handle('printer:printInvoice', async (_event, invoiceId: number) => {
     const result = await printerService.generateInvoicePDF(invoiceId);
+
+    if (result.success && result.filePath) {
+      // Open PDF with default viewer
+      shell.openPath(result.filePath);
+    }
+
+    return result;
+  });
+
+  // Print purchase invoice
+  ipcMain.handle('printer:printPurchaseInvoice', async (_event, invoiceId: number) => {
+    const result = await printerService.generatePurchaseInvoicePDF(invoiceId);
+
+    if (result.success && result.filePath) {
+      // Open PDF with default viewer
+      shell.openPath(result.filePath);
+    }
+
+    return result;
+  });
+
+  // Print thermal receipt (optimized for 3-inch thermal printers)
+  ipcMain.handle('printer:printThermalReceipt', async (_event, invoiceId: number) => {
+    const result = await printerService.generateThermalReceipt(invoiceId);
 
     if (result.success && result.filePath) {
       // Open PDF with default viewer

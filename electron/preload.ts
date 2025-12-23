@@ -26,6 +26,14 @@ contextBridge.exposeInMainWorld('api', {
     delete: (id: number) => ipcRenderer.invoke('sales:delete', id),
   },
 
+  // Sales Return API
+  salesReturn: {
+    create: (data: any) => ipcRenderer.invoke('salesreturn:create', data),
+    get: (id: number) => ipcRenderer.invoke('salesreturn:get', id),
+    list: (filters?: any) => ipcRenderer.invoke('salesreturn:list', filters),
+    updateRefund: (params: any) => ipcRenderer.invoke('salesreturn:updateRefund', params),
+  },
+
   // Purchase API (to be implemented)
   purchase: {
     create: (data: any) => ipcRenderer.invoke('purchase:create', data),
@@ -115,7 +123,9 @@ contextBridge.exposeInMainWorld('api', {
   // Printer API (to be implemented)
   printer: {
     printReceipt: (data: any, printerName?: string) => ipcRenderer.invoke('printer:printReceipt', data, printerName),
+    printThermalReceipt: (invoiceId: number) => ipcRenderer.invoke('printer:printThermalReceipt', invoiceId),
     printInvoice: (invoiceId: number) => ipcRenderer.invoke('printer:printInvoice', invoiceId),
+    printPurchaseInvoice: (invoiceId: number) => ipcRenderer.invoke('printer:printPurchaseInvoice', invoiceId),
     printDeliveryNote: (deliveryNoteId: number, showPrices: boolean) =>
       ipcRenderer.invoke('printer:printDeliveryNote', deliveryNoteId, showPrices),
     getPrinters: () => ipcRenderer.invoke('printer:getPrinters'),
@@ -139,6 +149,12 @@ export interface ElectronAPI {
     getNotTakenReport: (filters?: any) => Promise<any>;
     exportToExcel: (filters?: any) => Promise<any>;
     delete: (id: number) => Promise<any>;
+  };
+  salesReturn: {
+    create: (data: any) => Promise<any>;
+    get: (id: number) => Promise<any>;
+    list: (filters?: any) => Promise<any>;
+    updateRefund: (params: any) => Promise<any>;
   };
   purchase: {
     create: (data: any) => Promise<any>;
@@ -207,7 +223,9 @@ export interface ElectronAPI {
   };
   printer: {
     printReceipt: (data: any, printerName?: string) => Promise<any>;
+    printThermalReceipt: (invoiceId: number) => Promise<any>;
     printInvoice: (invoiceId: number) => Promise<any>;
+    printPurchaseInvoice: (invoiceId: number) => Promise<any>;
     printDeliveryNote: (deliveryNoteId: number, showPrices: boolean) => Promise<any>;
     getPrinters: () => Promise<any>;
     printThermalReceipt: (invoiceId: number) => Promise<any>;

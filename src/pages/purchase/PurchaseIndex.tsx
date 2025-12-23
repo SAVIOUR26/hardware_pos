@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Search, Plus, ShoppingBag, DollarSign, Filter } from 'lucide-react';
+import { Search, Plus, ShoppingBag, Filter } from 'lucide-react';
 import { toast } from 'sonner';
 import { format } from 'date-fns';
 

@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { format, startOfMonth, endOfMonth, subMonths } from 'date-fns';
-import { Calendar, Download, RefreshCw, TrendingDown } from 'lucide-react';
+import { RefreshCw, TrendingDown } from 'lucide-react';
 import { toast } from 'sonner';
 
 interface ReportFilters {

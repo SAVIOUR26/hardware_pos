@@ -120,5 +120,20 @@ export function registerSalesHandlers() {
     }
   });
 
+  // Delete sales invoice
+  ipcMain.handle('sales:delete', async (event, invoiceId) => {
+    try {
+      return salesService.deleteSalesInvoice(invoiceId);
+    } catch (error: any) {
+      return {
+        success: false,
+        error: {
+          code: 'DELETE_INVOICE_ERROR',
+          message: error.message,
+        },
+      };
+    }
+  });
+
   console.log('Sales IPC handlers registered');
 }

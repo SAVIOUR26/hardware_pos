@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { ShoppingCart, Plus, Search, Eye, DollarSign, Calendar, User, Printer, Download } from 'lucide-react';
+import { ShoppingCart, Plus, Search, Eye, DollarSign, Calendar, User, Printer, Download, Trash2 } from 'lucide-react';
 import { toast } from 'sonner';
 import { format } from 'date-fns';
 
@@ -93,6 +93,31 @@ function SalesIndex() {
       toast.error('Failed to export sales vouchers', { id: 'export-excel' });
     } finally {
       setExporting(false);
+    }
+  };
+
+  const handleDeleteInvoice = async (invoice: SalesInvoice) => {
+    // Confirm deletion
+    const confirmMessage = `Are you sure you want to delete invoice ${invoice.invoice_number}?\n\nThis will:\n- Release reserved stock\n- Reverse customer balance changes\n- Permanently delete the invoice\n\nThis action cannot be undone!`;
+
+    if (!window.confirm(confirmMessage)) {
+      return;
+    }
+
+    try {
+      toast.loading('Deleting invoice...', { id: `delete-${invoice.id}` });
+      const result = await window.api.sales.delete(invoice.id);
+
+      if (result.success) {
+        toast.success(`Invoice ${invoice.invoice_number} deleted successfully`, { id: `delete-${invoice.id}` });
+        // Reload invoices list
+        loadInvoices();
+      } else {
+        toast.error(result.error?.message || 'Failed to delete invoice', { id: `delete-${invoice.id}` });
+      }
+    } catch (error: any) {
+      console.error('Error deleting invoice:', error);
+      toast.error('Failed to delete invoice', { id: `delete-${invoice.id}` });
     }
   };
 
@@ -366,6 +391,13 @@ function SalesIndex() {
                           title="Print invoice"
                         >
                           <Printer className="w-4 h-4" />
+                        </button>
+                        <button
+                          onClick={() => handleDeleteInvoice(invoice)}
+                          className="p-2 hover:bg-red-100 text-red-600 rounded-lg transition-colors"
+                          title="Delete invoice"
+                        >
+                          <Trash2 className="w-4 h-4" />
                         </button>
                       </div>
                     </td>

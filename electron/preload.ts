@@ -23,6 +23,7 @@ contextBridge.exposeInMainWorld('api', {
     markAsTaken: (invoiceId: number, items: any[]) => ipcRenderer.invoke('sales:markAsTaken', invoiceId, items),
     getNotTakenReport: (filters?: any) => ipcRenderer.invoke('sales:getNotTakenReport', filters),
     exportToExcel: (filters?: any) => ipcRenderer.invoke('sales:exportToExcel', filters),
+    delete: (id: number) => ipcRenderer.invoke('sales:delete', id),
   },
 
   // Purchase API (to be implemented)
@@ -137,6 +138,7 @@ export interface ElectronAPI {
     markAsTaken: (invoiceId: number, items: any[]) => Promise<any>;
     getNotTakenReport: (filters?: any) => Promise<any>;
     exportToExcel: (filters?: any) => Promise<any>;
+    delete: (id: number) => Promise<any>;
   };
   purchase: {
     create: (data: any) => Promise<any>;

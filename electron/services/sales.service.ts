@@ -611,6 +611,90 @@ export function listSalesInvoices(filters?: any): any {
 }
 
 /**
+ * Delete sales invoice
+ * ⭐ Properly reverses all changes (stock, customer balance, etc.)
+ */
+export function deleteSalesInvoice(invoiceId: number): any {
+  return transaction((db: Database.Database) => {
+    try {
+      // 1. Get invoice details
+      const invoice = queryOne<any>(
+        'SELECT * FROM sales_invoices WHERE id = ?',
+        [invoiceId]
+      );
+
+      if (!invoice) {
+        throw new Error('Invoice not found');
+      }
+
+      // 2. Get invoice items
+      const items = query<any>(
+        'SELECT * FROM sales_invoice_items WHERE invoice_id = ?',
+        [invoiceId]
+      );
+
+      // 3. Release reserved stock (if not quotation)
+      if (!invoice.is_quotation) {
+        for (const item of items) {
+          // Release reserved stock
+          execute(
+            'UPDATE products SET reserved_stock = reserved_stock - ? WHERE id = ?',
+            [item.quantity, item.product_id]
+          );
+
+          // If items were delivered, add back to current stock
+          if (item.quantity_delivered > 0) {
+            execute(
+              'UPDATE products SET current_stock = current_stock + ? WHERE id = ?',
+              [item.quantity_delivered, item.product_id]
+            );
+          }
+        }
+      }
+
+      // 4. Reverse customer balance
+      const balanceField = invoice.currency === 'USD' ? 'current_balance_usd' : 'current_balance_ugx';
+
+      // Calculate the amount to reverse
+      const amountToReverse = invoice.total_amount - invoice.amount_paid;
+
+      execute(
+        `UPDATE customers SET ${balanceField} = ${balanceField} - ? WHERE id = ?`,
+        [amountToReverse, invoice.customer_id]
+      );
+
+      // 5. Delete related cash transactions
+      execute(
+        'DELETE FROM cash_transactions WHERE sales_invoice_id = ?',
+        [invoiceId]
+      );
+
+      // 6. Delete invoice items
+      execute(
+        'DELETE FROM sales_invoice_items WHERE invoice_id = ?',
+        [invoiceId]
+      );
+
+      // 7. Delete the invoice
+      execute(
+        'DELETE FROM sales_invoices WHERE id = ?',
+        [invoiceId]
+      );
+
+      return {
+        success: true,
+        data: {
+          message: `Invoice ${invoice.invoice_number} deleted successfully`,
+        },
+      };
+    } catch (error: any) {
+      console.error('Error deleting sales invoice:', error);
+      throw error;
+    }
+  });
+}
+
+/**
  * Convert quotation to invoice
  */
 export function convertQuotationToInvoice(quotationId: number): any {

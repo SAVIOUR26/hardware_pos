@@ -29,18 +29,6 @@ export function registerPrinterHandlers() {
     return result;
   });
 
-  // Print thermal receipt (optimized for 3-inch thermal printers)
-  ipcMain.handle('printer:printThermalReceipt', async (_event, invoiceId: number) => {
-    const result = await printerService.generateThermalReceipt(invoiceId);
-
-    if (result.success && result.filePath) {
-      // Open PDF with default viewer
-      shell.openPath(result.filePath);
-    }
-
-    return result;
-  });
-
   // Print receipt
   ipcMain.handle('printer:printReceipt', async (_event, data: any, printerName?: string) => {
     const result = await printerService.generateReceiptPDF(data, printerName);
